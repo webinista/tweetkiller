@@ -40,5 +40,5 @@ ACCESS_TOKEN_SECRET = ''
 
 
 # Delete tweets before this date in YYYY-MM-DD format
-BEFORE_DATE = ''
+BEFORE_DATE = False
 

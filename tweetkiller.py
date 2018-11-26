@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-import csv
 import json
 import twitter
 
@@ -25,9 +24,14 @@ from tweetkillerconf import CONSUMER_KEY, CONSUMER_SECRET
 from tweetkillerconf import ACCESS_TOKEN, ACCESS_TOKEN_SECRET
 from tweetkillerconf import BEFORE_DATE
 
+from dateutil.parser import parse
+from datetime import date
+
+
 # Deletes the tweet matching the tweetid passed.
 # Requires you to be authenticated
-def deletetweet(tweetid):
+def deletetweet(tweetid, beforedate = False):
+    # if beforedate
     try:
         deletedobj = twitterapi.DestroyStatus(tweetid)
         return tweetid
@@ -37,27 +41,31 @@ def deletetweet(tweetid):
 
 # Compares two dates
 def isbefore(basedate, dateinquestion):
-    return dateinquestion < basedate
+    tweetdate = parse(dateinquestion).date()
+    before = parse(basedate).date()
+    
+    return tweetdate < before
 # END isbefore
 
 
-# Deletes a tweet if it's before a particular date
-def deletetweetifbefore(tweetid, tweettime, beforedate):
-    if isbefore(beforedate, tweettime):
-        return deletetweet(tweetid)
-# END deletetweetifbefore
-
-
-def deletetweets(pathtotweets, beforedatecutoff = ''):
+def deletetweets(pathtotweets, beforedatecutoff = False):
     with open(pathtotweets) as tweetfile:
-        tweets = csv.DictReader(tweetfile)
+        tweets = json.load(tweetfile)
         
-        for row in tweets:
+        removed = False
+
+        for post in tweets:
             if beforedatecutoff:
-                deleted = deletetweetifbefore(row['tweet_id'], row['timestamp'], beforedatecutoff)
+                if isbefore(beforedatecutoff, post['created_at']):
+                    removed = deletetweet(post['id'])
             else:
-                deleted = deletetweet(row['tweet_id'])
-            print("Tweet {} was deleted".format(deleted))
+                removed = deletetweet(post['id'])
+
+        if removed:
+            print("Tweet {} was deleted".format(removed))
+        else:
+            print("Could not remove tweet {}".format(post['id']))
+
 # End deletetweets    
 
 # Initializes an API object
